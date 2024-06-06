@@ -1,8 +1,19 @@
 import filmModel from "../models/film.js";
+import multer from "multer"
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+// Tạo middleware multer
+const upload = multer({ storage: storage });
 const filmController = {
     //Tạo phim
     createFilm: async (req, res) => {
-        const {id, name, time, year, image, introduce} = req.body;
+        const {id, name, time, year,image, introduce} = req.body;
         // Kiểm tra xem phim đã tồn tại chưa
         try {
             const testFilm = await filmModel.findOne({name});
@@ -63,6 +74,52 @@ const filmController = {
         } catch (err) {
             console.error('Error updating film:', err);
             res.status(500).send({ message: 'Internal Server Error', error: err });
+        }
+    },
+    upload: upload.single('image'),
+    uploadImage: async (req, res)=>{
+        try {
+            const { id } = req.params;
+
+            // Tìm bộ phim trong cơ sở dữ liệu
+            const film = await filmModel.findById(id);
+
+            // Kiểm tra xem bộ phim có tồn tại không
+            if (!film) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Film not found',
+                    data: null
+                });
+            }
+
+            // Kiểm tra xem có file hình ảnh được tải lên không
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No image uploaded',
+                    data: null
+                });
+            }
+
+            // Lưu đường dẫn hình ảnh mới vào bộ phim
+            const imagePath = req.file.path;
+            film.image = imagePath;
+
+            // Lưu bộ phim đã được cập nhật và trả về
+            const updatedFilm = await film.save();
+            return res.status(200).json({
+                success: true,
+                message: 'Ảnh đã được cập nhật thành công',
+                data: updatedFilm
+            });
+        } catch (error) {
+            console.error('Error updating image:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Internal Server Error',
+                error: error.message
+            });
         }
     },
     //Xóa phim

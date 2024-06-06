@@ -4,12 +4,13 @@ import mongoose from "mongoose";
 import userRouter from "./routes/user.js";
 import routerFilm from "./routes/film.js";
 import cors from "cors"
-// import multer from "multer"
 dotenv.config();
 const PORT = process.env.PORT
 const app = express();
-// const upload = multer({ dest: 'uploads/' })
-app.use(cors())
+const corsOptions = {
+    origin: '*',
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/app/v1",userRouter )
 app.use("/app/v2", routerFilm)
